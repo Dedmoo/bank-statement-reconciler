@@ -33,3 +33,8 @@ curl -s -X POST http://localhost:8088/api/reconcile \
 ## License
 
 [MIT](LICENSE)
+
+## Notes
+
+Near-date matching allows a +/- 2 day window when the reference text also matches.
+
