@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -22,39 +23,52 @@ public class ReconciliationService {
             List<StatementLine> unmatchedStatement
     ) {}
 
+    private record Candidate(String expectedId, String statementId, String reason, int score) {}
+
     public ReconcileReport reconcile(List<ExpectedPayment> expected, List<StatementLine> statement) {
         if (expected == null || statement == null) {
             throw new IllegalArgumentException("Expected payments and statement lines are required.");
         }
-        List<Match> matched = new ArrayList<>();
-        Set<String> usedExpected = new HashSet<>();
-        Set<String> usedStatement = new HashSet<>();
 
+        List<Candidate> candidates = new ArrayList<>();
         for (ExpectedPayment exp : expected) {
+            if (exp.id() == null || exp.date() == null || exp.amount() == null) {
+                throw new IllegalArgumentException("Expected payment id, date and amount are required.");
+            }
             for (StatementLine line : statement) {
-                if (usedExpected.contains(exp.id()) || usedStatement.contains(line.id())) {
-                    continue;
+                if (line.id() == null || line.date() == null || line.amount() == null) {
+                    throw new IllegalArgumentException("Statement line id, date and amount are required.");
                 }
-                if (exp.amount().compareTo(line.amount()) != 0) {
+                if (exp.amount().subtract(line.amount()).abs().compareTo(new BigDecimal("0.01")) > 0) {
                     continue;
                 }
                 boolean sameDay = exp.date().equals(line.date());
                 boolean nearDay = Math.abs(exp.date().toEpochDay() - line.date().toEpochDay()) <= 2;
                 boolean refHit = containsRef(line.description(), exp.reference());
                 if (sameDay && refHit) {
-                    matched.add(new Match(exp.id(), line.id(), "amount+date+reference"));
-                    usedExpected.add(exp.id());
-                    usedStatement.add(line.id());
+                    candidates.add(new Candidate(exp.id(), line.id(), "amount+date+reference", 300));
                 } else if (nearDay && refHit) {
-                    matched.add(new Match(exp.id(), line.id(), "amount+near-date+reference"));
-                    usedExpected.add(exp.id());
-                    usedStatement.add(line.id());
+                    candidates.add(new Candidate(exp.id(), line.id(), "amount+near-date+reference", 200));
                 } else if (sameDay) {
-                    matched.add(new Match(exp.id(), line.id(), "amount+date"));
-                    usedExpected.add(exp.id());
-                    usedStatement.add(line.id());
+                    candidates.add(new Candidate(exp.id(), line.id(), "amount+date", 100));
                 }
             }
+        }
+
+        candidates.sort(Comparator.comparingInt(Candidate::score).reversed()
+                .thenComparing(Candidate::expectedId)
+                .thenComparing(Candidate::statementId));
+
+        List<Match> matched = new ArrayList<>();
+        Set<String> usedExpected = new HashSet<>();
+        Set<String> usedStatement = new HashSet<>();
+        for (Candidate c : candidates) {
+            if (usedExpected.contains(c.expectedId()) || usedStatement.contains(c.statementId())) {
+                continue;
+            }
+            matched.add(new Match(c.expectedId(), c.statementId(), c.reason()));
+            usedExpected.add(c.expectedId());
+            usedStatement.add(c.statementId());
         }
 
         List<ExpectedPayment> unmatchedExpected = expected.stream()

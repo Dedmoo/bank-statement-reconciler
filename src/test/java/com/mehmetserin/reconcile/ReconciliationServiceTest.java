@@ -38,4 +38,18 @@ class ReconciliationServiceTest {
         assertEquals(1, report.unmatchedExpected().size());
         assertEquals(1, report.unmatchedStatement().size());
     }
+
+    @Test
+    void prefersReferenceMatchOverWeakSameDay() {
+        var report = service.reconcile(
+                List.of(new ExpectedPayment("E1", LocalDate.of(2026, 6, 1), new BigDecimal("100.00"), "INV-9")),
+                List.of(
+                        new StatementLine("S1", LocalDate.of(2026, 6, 1), new BigDecimal("100.00"), "misc transfer"),
+                        new StatementLine("S2", LocalDate.of(2026, 6, 1), new BigDecimal("100.00"), "Payment INV-9")
+                )
+        );
+        assertEquals(1, report.matched().size());
+        assertEquals("S2", report.matched().get(0).statementId());
+        assertEquals("amount+date+reference", report.matched().get(0).reason());
+    }
 }
