@@ -118,3 +118,5 @@ Near-date matching allows a +/- 2 day window when the reference text also matche
 ## License
 
 [MIT](LICENSE)
+
+<!-- docs: maintenance pass 2026-06-17 -->
