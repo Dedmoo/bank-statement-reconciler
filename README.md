@@ -39,6 +39,69 @@ curl -s -X POST http://localhost:8088/api/reconcile \
 
 Response fields: `matched[]` (`expectedId`, `statementId`, `reason`), `unmatchedExpected[]`, `unmatchedStatement[]`.
 
+## Domain model
+
+Class-level view of the main types and how they relate (fields, operations and dependencies).
+
+```mermaid
+classDiagram
+    direction TB
+    class ReconcileController {
+        <<controller>>
+        -service: ReconciliationService
+        +reconcile(request) ReconcileReport
+    }
+    class ReconciliationService {
+        <<service>>
+        +reconcile(expected, statement) ReconcileReport
+    }
+    class ReconcileRequest {
+        <<record>>
+        +expected: List~ExpectedPayment~
+        +statement: List~StatementLine~
+    }
+    class ExpectedPayment {
+        <<record>>
+        +id: String
+        +date: LocalDate
+        +amount: BigDecimal
+        +reference: String
+    }
+    class StatementLine {
+        <<record>>
+        +id: String
+        +date: LocalDate
+        +amount: BigDecimal
+        +description: String
+    }
+    class Match {
+        <<record>>
+        +expectedId: String
+        +statementId: String
+        +reason: String
+    }
+    class Candidate {
+        <<record>>
+        +expectedId: String
+        +statementId: String
+        +reason: String
+        +score: int
+    }
+    class ReconcileReport {
+        <<record>>
+        +matched: List~Match~
+        +unmatchedExpected: List~ExpectedPayment~
+        +unmatchedStatement: List~StatementLine~
+    }
+    ReconcileController --> ReconciliationService
+    ReconcileController ..> ReconcileRequest
+    ReconcileRequest o-- ExpectedPayment
+    ReconcileRequest o-- StatementLine
+    ReconciliationService ..> Candidate
+    ReconciliationService ..> ReconcileReport
+    ReconcileReport o-- Match
+```
+
 ## Quick start
 
 ```bash
