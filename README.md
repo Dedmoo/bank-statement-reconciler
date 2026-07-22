@@ -10,6 +10,19 @@ Candidates are scored and the best unused pair is taken first:
 
 This avoids the classic greedy trap where a weak same-day match steals a line that should pair with a reference hit.
 
+## Scope (honest)
+
+This is a learning / portfolio matcher, not a production reconciliation platform.
+
+| Capability | Status |
+|------------|--------|
+| Amount + exact/near-date + reference scoring | Implemented |
+| Best-candidate-first matching (avoids greedy same-day trap) | Implemented |
+| Fuzzy / typo-tolerant reference matching (e.g. Levenshtein) | Not included (substring match only) |
+| Multi-currency reconciliation | Not included |
+| Bank feed integrations | Not included |
+| Persistence of reconciliation runs | Not included (stateless per-request matcher) |
+
 ## Architecture
 
 ```mermaid
