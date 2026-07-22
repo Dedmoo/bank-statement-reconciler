@@ -1,5 +1,7 @@
 # Bank Statement Reconciler
 
+[![CI](https://github.com/Dedmoo/bank-statement-reconciler/actions/workflows/ci.yml/badge.svg)](https://github.com/Dedmoo/bank-statement-reconciler/actions/workflows/ci.yml)
+
 Matches **expected payments** to **bank statement lines** using amount (±0.01), date (exact or ±2 days), and optional reference text found in the description.
 
 Candidates are scored and the best unused pair is taken first:
